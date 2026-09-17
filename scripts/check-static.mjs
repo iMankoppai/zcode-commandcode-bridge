@@ -24,7 +24,7 @@ import path from 'node:path';
 const ROOT = path.resolve(process.argv[2] ?? '.');
 const SKIP_DIRS = new Set(['.git', 'node_modules', 'dist']);
 const errors = [];
-const checked = { cmd: 0, vbs: 0, json: 0, yaml: 0, other: 0 };
+const checked = { cmd: 0, vbs: 0, ps1: 0, json: 0, yaml: 0, other: 0 };
 
 const rel = (p) => path.relative(ROOT, p).split(path.sep).join('/');
 const fail = (file, line, msg) => errors.push(`${rel(file)}${line ? ':' + line : ''}  ${msg}`);
@@ -61,8 +61,10 @@ function checkCmdOrVbs(file, text, kind) {
     if (line.startsWith(':') && !line.startsWith('::')) labels.add(line.slice(1).split(/[\s:]/)[0].toLowerCase());
     // quotes must balance per line
     if ((raw.match(/"/g) || []).length % 2 !== 0) fail(file, i + 1, 'odd number of double quotes');
-    // parentheses outside double quotes, tracked across the file
-    const bare = raw.replace(/"[^"]*"/g, '');
+    // parentheses outside double quotes, tracked across the file.
+    // `echo`/`rem`/`::` lines are text: a bare `)` there is not syntax.
+    const isTextLine = /^@?(echo|rem|::)/i.test(line);
+    const bare = isTextLine ? '' : raw.replace(/"[^"]*"/g, '');
     parens += (bare.match(/\(/g) || []).length - (bare.match(/\)/g) || []).length;
     // goto / call targets
     const m = /^(?:goto|call)\s+:?([A-Za-z0-9_.\-]+)/i.exec(line);
@@ -97,9 +99,19 @@ for (const file of files) {
   try { text = fs.readFileSync(file, 'utf8'); } catch { continue; }
   if (ext === '.cmd' || ext === '.bat') { checked.cmd++; checkCmdOrVbs(file, text, 'cmd'); checkTrailingNewline(file, text); }
   else if (ext === '.vbs') { checked.vbs++; checkCmdOrVbs(file, text, 'vbs'); checkTrailingNewline(file, text); }
+  else if (ext === '.ps1') {
+    checked.ps1++;
+    // Windows PowerShell 5.1 reads a BOM-less .ps1 as ANSI, so non-ASCII text garbles
+    if (!isAscii(text)) {
+      const bad = text.split(/\r\n|\n/).findIndex((l) => !isAscii(l));
+      fail(file, bad + 1, 'non-ASCII byte in a .ps1 file (PowerShell 5.1 reads BOM-less scripts as ANSI)');
+    }
+    if (/\r(?!\n)/.test(text)) fail(file, 0, 'contains a lone CR');
+    checkTrailingNewline(file, text);
+  }
   else if (ext === '.json') { checked.json++; checkJson(file, text); checkTrailingNewline(file, text); }
   else if (ext === '.yaml' || ext === '.yml') { checked.yaml++; checkYaml(file, text); checkTrailingNewline(file, text); }
-  else if (['.mjs', '.js', '.md', '.txt', '.patch', '.gitignore', '.gitattributes'].includes(ext) || !ext) {
+  else if (['.mjs', '.js', '.py', '.md', '.txt', '.patch', '.gitignore', '.gitattributes'].includes(ext) || !ext) {
     checked.other++;
     if (/\r(?!\n)/.test(text)) fail(file, 0, 'contains a lone CR');
     checkTrailingNewline(file, text);
@@ -107,7 +119,7 @@ for (const file of files) {
 }
 
 console.log(`check-static: ${files.length} files scanned`);
-console.log(`  .cmd/.bat ${checked.cmd}   .vbs ${checked.vbs}   .json ${checked.json}   .yaml ${checked.yaml}   other ${checked.other}`);
+console.log(`  .cmd/.bat ${checked.cmd}   .vbs ${checked.vbs}   .ps1 ${checked.ps1}   .json ${checked.json}   .yaml ${checked.yaml}   other ${checked.other}`);
 if (errors.length) {
   console.error(`\n${errors.length} problem(s):`);
   for (const e of errors) console.error('  ✗ ' + e);

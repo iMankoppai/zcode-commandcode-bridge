@@ -32,6 +32,7 @@ ZCode ──(OpenAI-compatible)──► cmdgo-bridge 127.0.0.1:11435 ──(/al
 | `bridge-loop.cmd` | Supervisor loop: restarts the bridge 5 s after it exits; **does nothing while an instance is already listening** (no port fights) |
 | `start-bridge.cmd` / `status.cmd` / `stop-bridge.cmd` | Visible start (live logs) / health + account pool / stop everything |
 | `patches/` | Upstream patch clamping `max_tokens` to the 200000 the Go gateway allows (**without it a batch of models fails with 400** — see `patches/README.md`) |
+| `quota/` | ZCode-side quota toolkit: the script plus a `/quota` command and a natural-language skill (see `quota/README.md`) |
 | `scripts/check-static.mjs` | Zero-dependency static checks run by CI (see `.github/workflows/ci.yml`) |
 
 ## Requirements
@@ -87,6 +88,18 @@ curl http://127.0.0.1:11435/v1/chat/completions ^
   -H "Content-Type: application/json" ^
   -d "{\"model\":\"deepseek/deepseek-v4-flash\",\"max_tokens\":64,\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}"
 ```
+
+## Quota lookup (`/quota` command + natural language)
+
+`quota/` is a three-piece ZCode-side quota toolkit: remaining credits, the 5-hour / weekly rate windows (with bars and reset countdowns), the period request and token totals, and the subscription period.
+
+| File | Deploy to | Purpose |
+| --- | --- | --- |
+| `quota/commandcode-quota.py` | `~/.zcode/scripts/` | The script (standard library only, no dependencies) |
+| `quota/quota.md` | `~/.zcode/commands/` | The `/quota` command: run the script and show its output verbatim |
+| `quota/SKILL.md` | `~/.zcode/skills/commandcode-quota/` | Natural-language trigger ("check the quota") |
+
+Deployment steps: [`quota/README.md`](quota/README.md). Key points: the script is **read-only** and **never prints a secret**; the data dir resolves as `--data-dir` → `$CMDGO_DATA_DIR` → `~/.cmdgo-bridge`, falling back to `~/.commandcode/auth.json` when the pool is empty; ZCode loads commands and skills **at startup**, so open a new conversation before expecting `/quota` to appear.
 
 ## Troubleshooting
 

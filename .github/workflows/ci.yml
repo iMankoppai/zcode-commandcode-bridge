@@ -27,6 +27,12 @@ jobs:
       - name: Repo static checks (.cmd / .vbs / .json / .yaml)
         run: node scripts/check-static.mjs
 
+      - name: Python syntax + offline smoke test (quota script)
+        run: |
+          python3 -m py_compile quota/commandcode-quota.py
+          python3 quota/commandcode-quota.py --json > /tmp/quota.json || true
+          python3 -c "import json; d = json.load(open('/tmp/quota.json')); assert 'ok' in d, 'quota JSON has no ok field'; print('quota script smoke ok (ok=%s)' % d['ok'])"
+
       - name: Patch applies cleanly (informational)
         continue-on-error: true
         run: |

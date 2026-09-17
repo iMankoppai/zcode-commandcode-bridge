@@ -35,6 +35,7 @@ ZCode ──(OpenAI 兼容)──► cmdgo-bridge 127.0.0.1:11435 ──(/alpha/
 | `bridge-loop.cmd` | 守护循环：进程退出 5 秒后重拉；**已有实例在跑就不重复启动**（避免抢端口） |
 | `start-bridge.cmd` / `status.cmd` / `stop-bridge.cmd` | 有窗口启动（看日志）/ 查看健康与账号池 / 停止 |
 | `patches/` | 上游补丁：把 `max_tokens` 钳到 Go 网关允许的 200000 以内（**不装会有一批模型直接 400**，见 `patches/README.md`） |
+| `quota/` | ZCode 侧额度查询三件套：脚本本体 + `/quota` 命令 + 自然语言技能（见 `quota/README.md`） |
 
 ## 前置条件
 
@@ -90,6 +91,18 @@ curl http://127.0.0.1:11435/v1/chat/completions ^
   -H "Content-Type: application/json" ^
   -d "{\"model\":\"deepseek/deepseek-v4-flash\",\"max_tokens\":64,\"messages\":[{\"role\":\"user\",\"content\":\"ping\"}]}"
 ```
+
+## 额度查询（`/quota` 命令 + 自然语言）
+
+`quota/` 是一套 ZCode 侧额度查询三件套：打印剩余 credits、5 小时/每周窗口（含进度条与重置倒计时）、本期请求数与 token 累计、订阅周期。
+
+| 文件 | 部署到 | 作用 |
+| --- | --- | --- |
+| `quota/commandcode-quota.py` | `~/.zcode/scripts/` | 脚本本体（只用标准库，零依赖） |
+| `quota/quota.md` | `~/.zcode/commands/` | `/quota` 命令：跑脚本并把输出原样贴出 |
+| `quota/SKILL.md` | `~/.zcode/skills/commandcode-quota/` | 自然语言触发（"查额度""还剩多少"） |
+
+部署步骤见 [`quota/README.md`](quota/README.md)。要点：脚本**只读**凭据、**不打印任何密钥**；数据目录按 `--data-dir` → `$CMDGO_DATA_DIR` → `~/.cmdgo-bridge` 解析，账号池为空时回退到 `~/.commandcode/auth.json`；ZCode 在**启动时**加载命令与技能列表，装完新开一个对话 `/quota` 才会出现。
 
 ## 排错
 
