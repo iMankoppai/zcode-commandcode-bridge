@@ -1,0 +1,31 @@
+{
+  "_comment": "Example of the provider entry this repo's zcode-commandcode-setup.mjs writes into ~/.zcode/v2/config.json. Replace <BRIDGE_CLIENT_KEY> with the client API key the bridge prints on first start (or copy it from the bridge console at http://127.0.0.1:11435/). Do NOT commit your real key.",
+  "provider": {
+    "REPLACED-BY-A-UUID-WHEN-THE-SCRIPT-RUNS": {
+      "name": "CommandCode Go",
+      "kind": "openai-compatible",
+      "options": {
+        "apiKey": "<BRIDGE_CLIENT_KEY>",
+        "apiKeyRequired": true,
+        "baseURL": "http://127.0.0.1:11435/v1"
+      },
+      "source": "custom",
+      "models": {
+        "deepseek/deepseek-v4-pro": {
+          "name": "DeepSeek V4 Pro",
+          "limit": { "context": 1000000, "output": 200000 },
+          "modalities": { "input": ["text"], "output": ["text"] },
+          "zcode": { "modalitiesConfigured": true },
+          "reasoning": { "enabled": true, "variants": ["off", "high", "max"], "defaultVariant": "max" }
+        },
+        "z-ai/glm-5.3-flash": {
+          "name": "GLM 5.3 Flash",
+          "limit": { "context": 1048576, "output": 65536 },
+          "modalities": { "input": ["text"], "output": ["text"] },
+          "zcode": { "modalitiesConfigured": true },
+          "reasoning": { "enabled": true, "variants": ["off", "high", "max"], "defaultVariant": "off" }
+        }
+      }
+    }
+  }
+}

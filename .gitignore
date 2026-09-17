@@ -1,0 +1,11 @@
+# 不提交任何密钥或运行期数据
+cmdgo-bridge/
+cmdgo-bridge-data/
+zcode-config-preview.json
+*.bak-*
+*.bak-*
+node_modules/
+npm-debug.log*
+.DS_Store
+Thumbs.db
+supervisor.log
