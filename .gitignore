@@ -5,6 +5,8 @@ zcode-config-preview.json
 *.bak-*
 *.bak-*
 node_modules/
+__pycache__/
+*.pyc
 npm-debug.log*
 .DS_Store
 Thumbs.db
