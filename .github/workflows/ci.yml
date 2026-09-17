@@ -1,0 +1,37 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: static checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: JavaScript syntax (node --check)
+        run: |
+          find . -type f \( -name '*.mjs' -o -name '*.js' \) -not -path './node_modules/*' -print0 \
+            | xargs -0 -r -n1 sh -c 'node --check "$0" && echo "ok  $0"'
+
+      - name: Repo static checks (.cmd / .vbs / .json / .yaml)
+        run: node scripts/check-static.mjs
+
+      - name: Patch applies cleanly (informational)
+        continue-on-error: true
+        run: |
+          git clone --depth 1 https://github.com/Patrick-mufeng/cmdgo-bridge.git /tmp/upstream
+          cd /tmp/upstream
+          git apply --check "$GITHUB_WORKSPACE/patches/cmdgo-bridge-max-tokens.patch" \
+            && echo "patch applies against upstream HEAD" \
+            || echo "::warning::patch no longer applies to upstream HEAD (upstream moved or fixed it) - update patches/README.md"

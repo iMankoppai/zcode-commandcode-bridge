@@ -1,5 +1,7 @@
 # cmdgo-zcode — 把 Command Code Go 套餐接进 ZCode（Windows）
 
+[English](README.en.md) | **中文** · [![ci](https://github.com/iMankoppai/zcode-commandcode-bridge/actions/workflows/ci.yml/badge.svg)](https://github.com/iMankoppai/zcode-commandcode-bridge/actions/workflows/ci.yml)
+
 **English TL;DR** — A tiny Windows toolkit that puts a local `cmdgo-bridge` (Command Code **Go plan** → OpenAI-compatible API) in front of ZCode, registers it as an `openai-compatible` provider, keeps it running (hidden autostart + supervisor loop), and ships the one-line upstream patch the Go gateway needs.
 
 > 非官方整合。需要你自己的 Command Code 订阅，适用 Command Code 的服务条款。上游桥与本仓库均与 Command Code, Inc. 无关。
